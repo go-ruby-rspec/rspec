@@ -230,11 +230,24 @@ func inspectFloat(f float64) string {
 	case math.IsInf(f, -1):
 		return "-Infinity"
 	}
+	// Ruby prints negative zero as "-0.0".
+	if f == 0 {
+		if math.Signbit(f) {
+			return "-0.0"
+		}
+		return "0.0"
+	}
 	s := strconv.FormatFloat(f, 'g', -1, 64)
-	// Ruby always shows a decimal point (1.0, not 1) and uses e-notation with a
-	// sign and at least two exponent digits differently; strconv's 'g' already
-	// round-trips, we just ensure a fractional part for plain integers.
-	if !strings.ContainsAny(s, ".eE") {
+	// Ruby's Float#inspect always shows a decimal point in the mantissa, so
+	// "1e+20" becomes "1.0e+20" and "1" becomes "1.0".
+	if i := strings.IndexAny(s, "eE"); i >= 0 {
+		mant, exp := s[:i], s[i:]
+		if !strings.Contains(mant, ".") {
+			mant += ".0"
+		}
+		return mant + exp
+	}
+	if !strings.Contains(s, ".") {
 		s += ".0"
 	}
 	return s

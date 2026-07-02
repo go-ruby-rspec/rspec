@@ -62,7 +62,7 @@ func (m *changeMatcher) ByAtMost(n any) *changeMatcher {
 	return m
 }
 
-func (m *changeMatcher) isBlockMatcher() {}
+func (m *changeMatcher) isBlockMatcher() { _ = m }
 
 // Matches ignores its argument (the observation is already captured) and
 // evaluates the change constraints.
@@ -176,7 +176,7 @@ func RaiseErrorObserved(obs RaisedError, class string, message any) Matcher {
 	return &raiseErrorMatcher{obs: obs, wantClass: class, wantMessage: message}
 }
 
-func (m *raiseErrorMatcher) isBlockMatcher() {}
+func (m *raiseErrorMatcher) isBlockMatcher() { _ = m }
 
 func (m *raiseErrorMatcher) Matches(any) bool {
 	if !m.obs.Raised {

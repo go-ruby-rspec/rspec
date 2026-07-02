@@ -20,19 +20,6 @@ func truthy(v any) bool {
 	return true
 }
 
-// article returns "an" before a vowel-initial word, else "a" — RSpec's
-// EnglishPhrasing.
-func article(word string) string {
-	if word == "" {
-		return "a"
-	}
-	switch strings.ToLower(word[:1]) {
-	case "a", "e", "i", "o", "u":
-		return "an"
-	}
-	return "a"
-}
-
 // beTruthyMatcher — be_truthy.
 type beTruthyMatcher struct{ actual any }
 
@@ -130,9 +117,17 @@ func (m *beComparisonMatcher) FailureMessage() string {
 }
 
 func (m *beComparisonMatcher) FailureMessageNegated() string {
-	exp := m.op + " " + Inspect(m.operand)
-	pad := strings.Repeat(" ", len(m.op)+1)
-	return fmt.Sprintf("expected: not %s\n     got:     %s%s", exp, pad, Inspect(m.actual))
+	// RSpec's BeComparedTo renders a distinctive negated message: the equality
+	// operators (==, !=) get the plain backtick form, while the ordering
+	// operators additionally note that negating them is "a bit confusing".
+	base := fmt.Sprintf("`expect(%s).not_to be %s %s`",
+		Inspect(m.actual), m.op, Inspect(m.operand))
+	switch m.op {
+	case "==", "!=":
+		return base
+	default:
+		return base + " not only FAILED, it is a bit confusing."
+	}
 }
 
 // beKindOfMatcher — be_a / be_kind_of / be_an.
@@ -145,16 +140,17 @@ type beKindOfMatcher struct {
 func BeKindOf(class string) Matcher { return &beKindOfMatcher{class: class} }
 
 func (m *beKindOfMatcher) Matches(a any) bool { m.actual = a; return isKindOf(a, m.class) }
+
+// RSpec renders be_a / be_kind_of as a fixed "a kind of <Class>" (the article
+// is not inflected for the class name).
 func (m *beKindOfMatcher) Description() string {
-	return "be " + article(m.class) + " kind of " + m.class
+	return "be a kind of " + m.class
 }
 func (m *beKindOfMatcher) FailureMessage() string {
-	return fmt.Sprintf("expected %s to be %s kind of %s",
-		Inspect(m.actual), article(m.class), m.class)
+	return fmt.Sprintf("expected %s to be a kind of %s", Inspect(m.actual), m.class)
 }
 func (m *beKindOfMatcher) FailureMessageNegated() string {
-	return fmt.Sprintf("expected %s not to be %s kind of %s",
-		Inspect(m.actual), article(m.class), m.class)
+	return fmt.Sprintf("expected %s not to be a kind of %s", Inspect(m.actual), m.class)
 }
 
 // beInstanceOfMatcher — be_instance_of / be_an_instance_of.
